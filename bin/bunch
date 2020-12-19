@@ -1,0 +1,66 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'bunch'
+
+def help
+  puts "\nUsage: #{File.basename(__FILE__)} [options] BUNCH_NAME|PATH_TO_FILE"
+  puts "\nBunch names are case insensitive and will execute first match"
+end
+
+bunch = Bunch.new
+
+optparse = OptionParser.new do |opts|
+  opts.banner = 'CLI for Bunch.app'
+
+  opts.on('-h', '--help', 'Display this screen') do |_opt|
+    puts opts
+    help
+    Process.exit 0
+  end
+
+  opts.on('-f', '--force-refresh', 'Force refresh cached preferences') do |opt|
+    bunch.update_cache
+  end
+
+  opts.on('-l', '--list', 'List available Bunches') do |_opt|
+    bunch.list_bunches
+    Process.exit 0
+  end
+
+  opts.on('-o', '--open', 'Open Bunch ignoring "Toggle Bunches" preference') do |_opt|
+    bunch.url_method = 'open'
+  end
+
+  opts.on('-c', '--close', 'Close Bunch ignoring "Toggle Bunches" preference') do |_opt|
+    bunch.url_method = 'close'
+  end
+
+  opts.on('-t', '--toggle', 'Toggle Bunch ignoring "Toggle Bunches" preference') do |_opt|
+    bunch.url_method = 'toggle'
+  end
+
+  opts.on('-s', '--show BUNCH', 'Show contents of Bunch') do |opt|
+    bunch.show(opt)
+    Process.exit 0
+  end
+
+  opts.on('--show-config', 'Display configuration values') do |opt|
+    bunch.show_config
+    Process.exit 0
+  end
+end
+
+optparse.parse!
+
+unless ARGV.length > 0
+  if STDIN.stat.size > 0
+    bunch.url_method = 'raw'
+    bunch.open(CGI.escape(STDIN.read))
+  else
+    puts "CLI for Bunches.app"
+    help
+  end
+else
+  ARGV.map { |arg| bunch.open(arg) }
+end
