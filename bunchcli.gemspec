@@ -1,7 +1,7 @@
 require_relative 'lib/bunch/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "bunch"
+  spec.name          = "bunchcli"
   spec.version       = BunchCLI::VERSION
   spec.authors       = ["Brett Terpstra"]
   spec.email         = ["me@brettterpstra.com"]
