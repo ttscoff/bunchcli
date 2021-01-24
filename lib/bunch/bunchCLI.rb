@@ -1,10 +1,15 @@
 class Bunch
-  attr_writer :url_method
+  include Util
+  attr_writer :url_method, :fragment, :variables, :show_url
 
   def initialize
     @bunch_dir = nil
     @url_method = nil
     @bunches = nil
+    @fragment = nil
+    @variables = nil
+    @success = nil
+    @show_url = false
     get_cache
   end
 
@@ -41,6 +46,18 @@ class Bunch
     @bunches = settings['bunches'] || generate_bunch_list
   end
 
+  def variable_query
+    vars = @variables.split(/,/).map { |v| v.strip }
+    query = []
+    vars.each { |v|
+      parts = v.split(/=/).map { |v| v.strip }
+      k = parts[0]
+      v = parts[1]
+      query << "#{k}=#{CGI.escape(v)}"
+    }
+    query
+  end
+
   # items.push({title: 0})
   def generate_bunch_list
     items = []
@@ -69,12 +86,15 @@ class Bunch
   end
 
   def url(bunch)
+    params = "&x-success=#{@success}" if @success
     if url_method == 'file'
-      %(x-bunch://raw?file=#{bunch})
+      %(x-bunch://raw?file=#{bunch}#{params})
     elsif url_method == 'raw'
-      %(x-bunch://raw?txt=#{bunch})
+      %(x-bunch://raw?txt=#{bunch}#{params})
+    elsif url_method == 'snippet'
+      %(x-bunch://snippet?file=#{bunch}#{params})
     else
-      %(x-bunch://#{url_method}?bunch=#{bunch[:title]})
+      %(x-bunch://#{url_method}?bunch=#{bunch[:title]}#{params})
     end
   end
 
@@ -107,28 +127,54 @@ class Bunch
   def open(str)
     # get front app
     front_app = %x{osascript -e 'tell application "System Events" to return name of first application process whose frontmost is true'}.strip
+    bid = bundle_id(front_app)
+    @success = bid if (bid)
+
     if @url_method == 'raw'
       warn 'Running raw string'
-      `open '#{url(str)}'`
+      if @show_url
+        $stdout.puts url(str)
+      else
+        `open '#{url(str)}'`
+      end
+    elsif @url_method == 'snippet'
+      _url = url(str)
+      params = []
+      params << "fragment=#{CGI.escape(@fragment)}" if @fragment
+      params.concat(variable_query) if @variables
+      _url += '&' + params.join('&')
+      if @show_url
+        $stdout.puts _url
+      else
+        warn "Opening snippet"
+        `open '#{_url}'`
+      end
     else
       bunch = find_bunch(str)
       unless bunch
         if File.exists?(str)
           @url_method = 'file'
-          warn "Opening file"
-          `open '#{url(str)}'`
+          if @show_url
+            $stdout.puts url(str)
+          else
+            warn "Opening file"
+            `open '#{url(str)}'`
+          end
         else
           warn 'No matching Bunch found'
           Process.exit 1
         end
       else
-        warn "#{human_action} #{bunch[:title]}"
-
-        `open "#{url(bunch)}"`
+        if @show_url
+          $stdout.puts url(str)
+        else
+          warn "#{human_action} #{bunch[:title]}"
+          `open '#{url(bunch)}'`
+        end
       end
     end
     # attempt to restore front app
-    %x{osascript -e 'delay 2' -e 'tell application "#{front_app}" to activate'}
+    # %x{osascript -e 'delay 2' -e 'tell application "#{front_app}" to activate'}
   end
 
   def show(str)

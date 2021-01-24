@@ -13,18 +13,13 @@ bunch = Bunch.new
 optparse = OptionParser.new do |opts|
   opts.banner = 'CLI for Bunch.app'
 
-  opts.on('-h', '--help', 'Display this screen') do |_opt|
-    puts opts
-    help
+  opts.on('-l', '--list', 'List available Bunches') do |_opt|
+    bunch.list_bunches
     Process.exit 0
   end
 
-  opts.on('-f', '--force-refresh', 'Force refresh cached preferences') do |opt|
-    bunch.update_cache
-  end
-
-  opts.on('-l', '--list', 'List available Bunches') do |_opt|
-    bunch.list_bunches
+  opts.on('-s', '--show BUNCH', 'Show contents of Bunch') do |opt|
+    bunch.show(opt)
     Process.exit 0
   end
 
@@ -40,13 +35,39 @@ optparse = OptionParser.new do |opts|
     bunch.url_method = 'toggle'
   end
 
-  opts.on('-s', '--show BUNCH', 'Show contents of Bunch') do |opt|
-    bunch.show(opt)
+  opts.on('--snippet', 'Load as snippet') do |opt|
+    bunch.url_method = 'snippet'
+  end
+
+  opts.on('--fragment=FRAGMENT', 'Run a specific section') do |opt|
+    bunch.fragment = opt
+  end
+
+  opts.on('--vars=VARS', 'Variables to pass to a snippet, comma-separated') do |opt|
+    bunch.variables = opt
+  end
+
+  opts.on('-u', '--url', 'Output URL instead of opening') do |_opt|
+    bunch.show_url = true
+  end
+
+  opts.on('-i','--interactive', 'Interactively generate a Bunch url') do |opt|
+    BunchURLGenerator.new.generate
     Process.exit 0
   end
 
   opts.on('--show-config', 'Display configuration values') do |opt|
     bunch.show_config
+    Process.exit 0
+  end
+
+  opts.on('-f', '--force-refresh', 'Force refresh cached preferences') do |opt|
+    bunch.update_cache
+  end
+
+  opts.on('-h', '--help', 'Display this screen') do |_opt|
+    puts opts
+    help
     Process.exit 0
   end
 end
