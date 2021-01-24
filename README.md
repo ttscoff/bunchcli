@@ -10,14 +10,19 @@ A CLI for [Bunch.app](https://brettterpstra.com/projects/bunch).
 
     $ bunch -h  
     CLI for Bunch.app
-    -h, --help                       Display this screen
-    -f, --force-refresh              Force refresh cached preferences
     -l, --list                       List available Bunches
+    -s, --show BUNCH                 Show contents of Bunch
     -o, --open                       Open Bunch ignoring "Toggle Bunches" preference
     -c, --close                      Close Bunch ignoring "Toggle Bunches" preference
     -t, --toggle                     Toggle Bunch ignoring "Toggle Bunches" preference
-    -s, --show BUNCH                 Show contents of Bunch
+        --snippet                    Load as snippet
+        --fragment=FRAGMENT          Run a specific section
+        --vars=VARS                  Variables to pass to a snippet, comma-separated
+    -u, --url                        Output URL instead of opening
+    -i, --interactive                Interactively generate a Bunch url
         --show-config                Display configuration values
+    -f, --force-refresh              Force refresh cached preferences
+    -h, --help                       Display this screen
 
 Usage: `bunch [options] BUNCH_NAME|PATH_TO_FILE`
 
