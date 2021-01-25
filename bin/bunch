@@ -6,12 +6,17 @@ require 'bunch'
 def help
   puts "\nUsage: #{File.basename(__FILE__)} [options] BUNCH_NAME|PATH_TO_FILE"
   puts "\nBunch names are case insensitive and will execute first match"
+  puts "Use 'bunch -h' to display options"
+end
+
+def version
+  puts "Bunch CLI v#{BunchCLI::VERSION}"
 end
 
 bunch = Bunch.new
 
 optparse = OptionParser.new do |opts|
-  opts.banner = 'CLI for Bunch.app'
+  opts.banner = "CLI for Bunch.app v#{BunchCLI::VERSION}"
 
   opts.on('-l', '--list', 'List available Bunches') do |_opt|
     bunch.list_bunches
@@ -68,6 +73,11 @@ optparse = OptionParser.new do |opts|
   opts.on('-h', '--help', 'Display this screen') do |_opt|
     puts opts
     help
+    Process.exit 0
+  end
+
+  opts.on('-v', '--version', 'Display Bunch version') do |_opt|
+    version
     Process.exit 0
   end
 end
