@@ -17,12 +17,13 @@ module Util
     shortname = app.sub(/\.app$/, '')
     apps = `mdfind -onlyin /Applications -onlyin /Applications/Setapp -onlyin /Applications/Utilities -onlyin ~/Applications -onlyin /Developer/Applications 'kMDItemKind==Application'`
 
-    app = apps.split(/\n/).select! { |line| line.chomp =~ /#{shortname}\.app$/ }[0]
+    foundapp = apps.split(/\n/).select! { |line| line.chomp =~ /#{shortname}\.app$/i }[0]
 
-    if app
-      bid = `mdls -name kMDItemCFBundleIdentifier -r "#{app}"`.chomp
+    if foundapp
+      bid = `mdls -name kMDItemCFBundleIdentifier -r "#{foundapp}"`.chomp
     else
-      warn "Could not locate bundle id for #{shortname}"
+      # warn "Could not locate bundle id for #{shortname}, using provided app name"
+      bid = app
     end
     bid
   end
