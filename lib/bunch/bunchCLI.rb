@@ -93,6 +93,8 @@ class Bunch
       %(x-bunch://raw?txt=#{bunch}#{params})
     elsif url_method == 'snippet'
       %(x-bunch://snippet?file=#{bunch}#{params})
+    elsif url_method == 'setPref'
+      %(x-bunch://setPref?#{bunch})
     else
       %(x-bunch://#{url_method}?bunch=#{bunch[:title]}#{params})
     end
@@ -124,6 +126,18 @@ class Bunch
     (url_method.gsub(/e$/, '') + 'ing').capitalize
   end
 
+  def list_preferences
+    prefs =<<EOF
+toggleBunches=[0,1]        Allow Bunches to be both opened and closed
+configDir=[path]           Absolute path to Bunches folder
+singleBunchMode=[0,1]      Close open Bunch when opening new one
+preserveOpenBunches=[0,1]  Restore Open Bunches on Launch
+debugLevel=[0-4]           Set the logging level for the Bunch Log
+EOF
+    puts prefs
+  end
+
+
   def open(str)
     # get front app
     front_app = %x{osascript -e 'tell application "System Events" to return name of first application process whose frontmost is true'}.strip
@@ -148,6 +162,19 @@ class Bunch
       else
         warn "Opening snippet"
         `open '#{_url}'`
+      end
+    elsif @url_method == 'setPref'
+      if str =~ /^(\w+)=([^= ]+)$/
+        _url = url(str)
+        if @show_url
+          $stdout.puts _url
+        else
+          warn "Setting preference #{str}"
+          `open '#{_url}'`
+        end
+      else
+        warn "Invalid key=value pair"
+        Process.exit 1
       end
     else
       bunch = find_bunch(str)

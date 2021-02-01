@@ -52,6 +52,10 @@ optparse = OptionParser.new do |opts|
     bunch.variables = opt
   end
 
+  opts.on('--pref', 'Set a preference. Run without argument to list available preferences.') do |opt|
+    bunch.url_method = 'setPref'
+  end
+
   opts.on('-u', '--url', 'Output URL instead of opening') do |_opt|
     bunch.show_url = true
   end
@@ -88,6 +92,8 @@ unless ARGV.length > 0
   if STDIN.stat.size > 0
     bunch.url_method = 'raw'
     bunch.open(CGI.escape(STDIN.read))
+  elsif bunch.url_method == 'setPref'
+    bunch.list_preferences
   else
     puts "CLI for Bunches.app"
     help
