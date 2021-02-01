@@ -18,11 +18,13 @@ A CLI for [Bunch.app](https://brettterpstra.com/projects/bunch).
         --snippet                    Load as snippet
         --fragment=FRAGMENT          Run a specific section
         --vars=VARS                  Variables to pass to a snippet, comma-separated
+        --pref                       Set a preference. Run without argument to list available preferences.
     -u, --url                        Output URL instead of opening
     -i, --interactive                Interactively generate a Bunch url
         --show-config                Display configuration values
     -f, --force-refresh              Force refresh cached preferences
     -h, --help                       Display this screen
+    -v, --version                    Display Bunch version
 
 Usage: `bunch [options] BUNCH_NAME|PATH_TO_FILE`
 
