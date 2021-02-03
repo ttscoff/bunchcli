@@ -49,8 +49,7 @@ module Prompt
   def get_line(query = '->')
     stty_save = `stty -g`.chomp
     begin
-      print query.bright_green
-      line = Readline.readline(": ", true)
+      line = Readline.readline("#{query}: ", true)
     rescue Interrupt
       system('stty', stty_save) # Restore
       exit
@@ -61,7 +60,7 @@ module Prompt
   def get_text(query = 'Enter text, ^d to end')
     stty_save = `stty -g`.chomp
     lines = []
-    puts query.bright_green
+    puts query
     begin
       while (line = Readline.readline)
         lines << line
@@ -103,15 +102,15 @@ class Menu
   def choose(query = 'Select an item')
     throw 'No items initialized' if @items.nil?
     STDERR.puts
-    STDERR.puts "┌#{("─" * 74)}┐".yellow
+    STDERR.puts "┌#{("─" * 74)}┐"
     intpad = Math::log10(@items.length).to_i + 1
     @items.each_with_index do |item, idx|
       idxstr = "%#{intpad}d" % (idx + 1)
       line = "#{idxstr}: #{item.title}"
       pad = 74 - line.length
-      STDERR.puts "│".yellow + "#{line}#{" " * pad}".bright_white + "│".yellow
+      STDERR.puts "│#{line}#{" " * pad}│"
     end
-    STDERR.puts "└┤".yellow + " #{query} ".bright_green + "├#{"─" * (70 - query.length)}┘".yellow
+    STDERR.puts "└┤ #{query} ├#{"─" * (70 - query.length)}┘"
     sel = choose_number("> ", @items.length)
     sel ? @items[sel.to_i - 1] : nil
   end

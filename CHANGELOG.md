@@ -1,6 +1,6 @@
-### 1.1.5
+### 1.1.6
 
-- Add some color to the interactive URL generator
+- Bugfix
 
 ### 1.1.4
 
