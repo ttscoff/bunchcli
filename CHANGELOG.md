@@ -1,3 +1,7 @@
+### 1.1.4
+
+- Add `--show-config-key KEY` query for specific keys (dir, toggle, method)
+
 ### 1.1.3
 
 - Add --prefs option
