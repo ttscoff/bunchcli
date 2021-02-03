@@ -5,5 +5,4 @@ require "bunch/version"
 require 'yaml'
 require 'cgi'
 require 'bunch/url_generator'
-require 'term-colorizer'
 require 'bunch/bunchCLI'

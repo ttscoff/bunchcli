@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bunchcli (1.1.6)
+    bunchcli (1.1.7)
 
 GEM
   remote: https://rubygems.org/
