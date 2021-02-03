@@ -65,8 +65,13 @@ optparse = OptionParser.new do |opts|
     Process.exit 0
   end
 
-  opts.on('--show-config', 'Display configuration values') do |opt|
+  opts.on('--show-config', 'Display all configuration values') do |opt|
     bunch.show_config
+    Process.exit 0
+  end
+
+  opts.on('--show-config-key KEY', 'Display a config value [dir, toggle, method]') do |opt|
+    bunch.show_config(opt)
     Process.exit 0
   end
 

@@ -13,6 +13,14 @@ class Bunch
     get_cache
   end
 
+  def launch_if_needed
+    pid = `ps ax | grep 'MacOS/Bunch'|grep -v grep`.strip
+    if pid == ""
+      `open -a Bunch`
+      sleep 2
+    end
+  end
+
   def update_cache
     @bunch_dir = nil
     @url_method = nil
@@ -139,6 +147,7 @@ EOF
 
 
   def open(str)
+    launch_if_needed
     # get front app
     front_app = %x{osascript -e 'tell application "System Events" to return name of first application process whose frontmost is true'}.strip
     bid = bundle_id(front_app)
@@ -210,12 +219,21 @@ EOF
     puts output
   end
 
-  def show_config
-    puts "Bunches Folder: #{bunch_dir}"
-    puts "Default URL Method: #{url_method}"
-    puts "Cached Bunches"
-    bunches.each {|b|
-      puts "    - #{b[:title]}"
-    }
+  def show_config(key=nil)
+    case key
+    when /(folder|dir)/
+      puts bunch_dir
+    when /toggle/
+      puts url_method == 'toggle' ? 'true' : 'false'
+    when /method/
+      puts url_method
+    else
+      puts "Bunches Folder: #{bunch_dir}"
+      puts "Default URL Method: #{url_method}"
+      puts "Cached Bunches"
+      bunches.each {|b|
+        puts "    - #{b[:title]}"
+      }
+    end
   end
 end
