@@ -1,3 +1,7 @@
+### 1.1.5
+
+- Add some color to the interactive URL generator
+
 ### 1.1.4
 
 - Add `--show-config-key KEY` query for specific keys (dir, toggle, method)
