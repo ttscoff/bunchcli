@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bunchcli (1.1.7)
+    bunchcli (1.1.8)
 
 GEM
   remote: https://rubygems.org/
@@ -10,6 +10,7 @@ GEM
 
 PLATFORMS
   x86_64-darwin-19
+  x86_64-darwin-20
 
 DEPENDENCIES
   bunchcli!

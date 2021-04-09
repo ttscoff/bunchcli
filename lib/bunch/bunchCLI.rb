@@ -1,8 +1,9 @@
 class Bunch
   include Util
-  attr_writer :url_method, :fragment, :variables, :show_url
+  attr_writer :target_app, :url_method, :fragment, :variables, :show_url
 
   def initialize
+    @target_app = nil
     @bunch_dir = nil
     @url_method = nil
     @bunches = nil
@@ -25,11 +26,13 @@ class Bunch
     @bunch_dir = nil
     @url_method = nil
     @bunches = nil
+    @target_app = nil
     target = File.expand_path(CACHE_FILE)
     settings = {
       'bunchDir' => bunch_dir,
       'method' => url_method,
       'bunches' => bunches,
+      'target_app' => target_app,
       'updated' => Time.now.strftime('%s').to_i
     }
     File.open(target,'w') do |f|
@@ -52,6 +55,7 @@ class Bunch
     @bunch_dir = settings['bunchDir'] || bunch_dir
     @url_method = settings['method'] || url_method
     @bunches = settings['bunches'] || generate_bunch_list
+    @target_app = settings['target_app'] || target_app
   end
 
   def variable_query
@@ -69,10 +73,10 @@ class Bunch
   # items.push({title: 0})
   def generate_bunch_list
     items = []
-    Dir.glob(File.join(bunch_dir, '*.bunch')).each do |f|
+    Dir.glob(File.join(bunch_dir, '**/*.bunch')).each do |f|
       items.push(
         path: f,
-        title: File.basename(f, '.bunch')
+        title: f.sub(/^#{bunch_dir}\//,'').sub(/\.bunch$/,'')
       )
     end
     items
@@ -80,13 +84,19 @@ class Bunch
 
   def bunch_dir
     @bunch_dir ||= begin
-      dir = `/usr/bin/defaults read #{ENV['HOME']}/Library/Preferences/com.brettterpstra.Bunch.plist configDir`.strip
+      dir = `osascript -e 'tell app "#{@target_app}" to get preference "Folder"'`.strip
+      # dir = `/usr/bin/defaults read #{ENV['HOME']}/Library/Preferences/com.brettterpstra.Bunch.plist configDir`.strip
       File.expand_path(dir)
     end
   end
 
+  def target_app
+    @target_app ||= "Bunch"
+  end
+
   def url_method
-    @url_method ||= `/usr/bin/defaults read #{ENV['HOME']}/Library/Preferences/com.brettterpstra.Bunch.plist toggleBunches`.strip == '1' ? 'toggle' : 'open'
+    @url_method ||= `osascript -e 'tell app "#{@target_app}" to get preference "Toggle"'`.strip == '1' ? 'toggle' : 'open'
+    # @url_method ||= `/usr/bin/defaults read #{ENV['HOME']}/Library/Preferences/com.brettterpstra.Bunch.plist toggleBunches`.strip == '1' ? 'toggle' : 'open'
   end
 
   def bunches
