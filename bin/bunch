@@ -18,10 +18,6 @@ bunch = Bunch.new
 optparse = OptionParser.new do |opts|
   opts.banner = "CLI for Bunch.app v#{BunchCLI::VERSION}"
 
-  opts.on('-b', '--beta', 'Use Bunch Beta for commands') do |_opt|
-    bunch.target_app = 'Bunch Beta'
-  end
-
   opts.on('-l', '--list', 'List available Bunches') do |_opt|
     bunch.list_bunches
     Process.exit 0

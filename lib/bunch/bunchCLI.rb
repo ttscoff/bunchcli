@@ -1,9 +1,8 @@
 class Bunch
   include Util
-  attr_writer :target_app, :url_method, :fragment, :variables, :show_url
+  attr_writer :url_method, :fragment, :variables, :show_url
 
   def initialize
-    @target_app = nil
     @bunch_dir = nil
     @url_method = nil
     @bunches = nil
@@ -26,13 +25,11 @@ class Bunch
     @bunch_dir = nil
     @url_method = nil
     @bunches = nil
-    @target_app = nil
     target = File.expand_path(CACHE_FILE)
     settings = {
       'bunchDir' => bunch_dir,
       'method' => url_method,
       'bunches' => bunches,
-      'target_app' => target_app,
       'updated' => Time.now.strftime('%s').to_i
     }
     File.open(target,'w') do |f|
@@ -55,7 +52,6 @@ class Bunch
     @bunch_dir = settings['bunchDir'] || bunch_dir
     @url_method = settings['method'] || url_method
     @bunches = settings['bunches'] || generate_bunch_list
-    @target_app = settings['target_app'] || target_app
   end
 
   def variable_query
@@ -73,10 +69,11 @@ class Bunch
   # items.push({title: 0})
   def generate_bunch_list
     items = []
-    Dir.glob(File.join(bunch_dir, '**/*.bunch')).each do |f|
+    `osascript -e 'tell app "#{TARGET_APP}" to list bunches'`.strip.split(/,/).each do |b|
+      b.strip!
       items.push(
-        path: f,
-        title: f.sub(/^#{bunch_dir}\//,'').sub(/\.bunch$/,'')
+        path: File.join(bunch_dir, b + '.bunch'),
+        title: b
       )
     end
     items
@@ -84,18 +81,14 @@ class Bunch
 
   def bunch_dir
     @bunch_dir ||= begin
-      dir = `osascript -e 'tell app "#{@target_app}" to get preference "Folder"'`.strip
+      dir = `osascript -e 'tell app "#{TARGET_APP}" to get preference "Folder"'`.strip
       # dir = `/usr/bin/defaults read #{ENV['HOME']}/Library/Preferences/com.brettterpstra.Bunch.plist configDir`.strip
       File.expand_path(dir)
     end
   end
 
-  def target_app
-    @target_app ||= "Bunch"
-  end
-
   def url_method
-    @url_method ||= `osascript -e 'tell app "#{@target_app}" to get preference "Toggle"'`.strip == '1' ? 'toggle' : 'open'
+    @url_method ||= `osascript -e 'tell app "#{TARGET_APP}" to get preference "Toggle"'`.strip == '1' ? 'toggle' : 'open'
     # @url_method ||= `/usr/bin/defaults read #{ENV['HOME']}/Library/Preferences/com.brettterpstra.Bunch.plist toggleBunches`.strip == '1' ? 'toggle' : 'open'
   end
 
@@ -106,15 +99,15 @@ class Bunch
   def url(bunch)
     params = "&x-success=#{@success}" if @success
     if url_method == 'file'
-      %(x-bunch://raw?file=#{bunch}#{params})
+      %(#{TARGET_URL}://raw?file=#{bunch}#{params})
     elsif url_method == 'raw'
-      %(x-bunch://raw?txt=#{bunch}#{params})
+      %(#{TARGET_URL}://raw?txt=#{bunch}#{params})
     elsif url_method == 'snippet'
-      %(x-bunch://snippet?file=#{bunch}#{params})
+      %(#{TARGET_URL}://snippet?file=#{bunch}#{params})
     elsif url_method == 'setPref'
-      %(x-bunch://setPref?#{bunch})
+      %(#{TARGET_URL}://setPref?#{bunch})
     else
-      %(x-bunch://#{url_method}?bunch=#{bunch[:title]}#{params})
+      %(#{TARGET_URL}://#{url_method}?bunch=#{bunch}#{params})
     end
   end
 
@@ -197,25 +190,32 @@ EOF
       end
     else
       bunch = find_bunch(str)
+      params = []
+      params << "fragment=#{CGI.escape(@fragment)}" if @fragment
+      params.concat(variable_query) if @variables
       unless bunch
         if File.exists?(str)
           @url_method = 'file'
+          _url = url(str)
+          _url += '&' + params.join('&') if params.length
           if @show_url
-            $stdout.puts url(str)
+            $stdout.puts _url
           else
             warn "Opening file"
-            `open '#{url(str)}'`
+            `open '#{_url}'`
           end
         else
           warn 'No matching Bunch found'
           Process.exit 1
         end
       else
+        _url = url(bunch[:title])
+        _url += '&' + params.join('&') if params.length
         if @show_url
-          $stdout.puts url(str)
+          $stdout.puts _url
         else
           warn "#{human_action} #{bunch[:title]}"
-          `open '#{url(bunch)}'`
+          `open '#{_url}'`
         end
       end
     end

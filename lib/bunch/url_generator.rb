@@ -158,13 +158,22 @@ class BunchFinder
   attr_accessor :config_dir
 
   def initialize
-    config_dir = `defaults read com.brettterpstra.bunch configDir`.strip
+    config_dir = `osascript -e 'tell app "#{TARGET_APP}" to get preference "Folder"'`.strip
     config_dir = File.expand_path(config_dir)
     if File.directory?(config_dir)
       @config_dir = config_dir
     else
       throw 'Unable to retrieve Bunches Folder'
     end
+  end
+
+  def bunches_to_items
+    items = []
+    `osascript -e 'tell app "#{TARGET_APP}" to list bunches'`.strip.split(/,/).each do |b|
+      filename = b.strip
+      items << MenuItem.new(filename, filename, filename)
+    end
+    items
   end
 
   def files_to_items(dir, pattern)
@@ -180,12 +189,12 @@ class BunchFinder
   end
 
   def choose_bunch
-    items = files_to_items(@config_dir, '*.bunch')
-    items.map! do |item|
-      item.title = File.basename(item.title, '.bunch')
-      item.value = File.basename(item.title, '.bunch')
-      item
-    end
+    items = bunches_to_items
+    # items.map! do |item|
+    #   item.title = File.basename(item.title, '.bunch')
+    #   item.value = File.basename(item.title, '.bunch')
+    #   item
+    # end
     menu = Menu.new(items)
     menu.choose('Select a Bunch')
   end
