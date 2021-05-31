@@ -153,7 +153,7 @@ EOF
     launch_if_needed
     # get front app
     front_app = %x{osascript -e 'tell application "System Events" to return name of first application process whose frontmost is true'}.strip
-    bid = bundle_id(front_app)
+    bid = bundle_id(front_app) rescue false
     @success = bid if (bid)
 
     if @url_method == 'raw'

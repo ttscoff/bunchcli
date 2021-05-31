@@ -1,3 +1,3 @@
 module BunchCLI
-  VERSION = "1.1.10.pre"
+  VERSION = "1.1.11.pre"
 end

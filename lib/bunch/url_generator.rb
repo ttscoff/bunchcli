@@ -15,9 +15,17 @@ end
 module Util
   def bundle_id(app)
     shortname = app.sub(/\.app$/, '')
-    apps = `mdfind -onlyin /Applications -onlyin /Applications/Setapp -onlyin /Applications/Utilities -onlyin ~/Applications -onlyin /Developer/Applications 'kMDItemKind==Application'`
+    apps = `mdfind -onlyin /Applications -onlyin /Applications/Setapp -onlyin /Applications/Utilities -onlyin ~/Applications -onlyin /Developer/Applications -onlyin /System/Applications 'kMDItemKind==Application'`
 
-    foundapp = apps.split(/\n/).select! { |line| line.chomp =~ /#{shortname}\.app$/i }[0]
+    return false if !apps || apps.strip.length == 0
+
+    foundapps = apps.split(/\n/).select! { |line| line.chomp =~ /#{shortname}\.app$/i }
+
+    if foundapps.length > 0
+      foundapp = foundapps[0]
+    else
+      return false
+    end
 
     if foundapp
       bid = `mdls -name kMDItemCFBundleIdentifier -r "#{foundapp}"`.chomp
