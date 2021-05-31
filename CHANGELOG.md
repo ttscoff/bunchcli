@@ -1,3 +1,7 @@
+### 1.1.11pre
+
+- Fix for Terminal when checking for bundle id
+
 ### 1.1.7
 
 - Bugfix
