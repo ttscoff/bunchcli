@@ -1,11 +1,19 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env ruby -W1
+# frozen_string_literal: true
 
 require 'optparse'
 require 'bunch'
 
+def app_running?(app)
+  !`ps ax|grep -i "#{app}.app"|grep -v grep`.empty?
+end
+
+TARGET_APP = app_running?('Bunch Beta') ? 'Bunch Beta' : 'Bunch'
+TARGET_URL = TARGET_APP == 'Bunch Beta' ? 'x-bunch-beta' : 'x-bunch'
+
 def help
   puts "\nUsage: #{File.basename(__FILE__)} [options] BUNCH_NAME|PATH_TO_FILE"
-  puts "\nBunch names are case insensitive and will execute first match"
+  puts "\nBunch names are case insensitive and will execute shortest match"
   puts "Use 'bunch -h' to display options"
 end
 
@@ -52,20 +60,20 @@ optparse = OptionParser.new do |opts|
     bunch.variables = opt
   end
 
-  opts.on('--pref', 'Set a preference. Run without argument to list available preferences.') do |opt|
+  opts.on('--pref', 'Set a preference. Run without argument to list available preferences.') do
     bunch.url_method = 'setPref'
   end
 
-  opts.on('-u', '--url', 'Output URL instead of opening') do |_opt|
+  opts.on('-u', '--url', 'Output URL instead of opening') do
     bunch.show_url = true
   end
 
-  opts.on('-i','--interactive', 'Interactively generate a Bunch url') do |opt|
+  opts.on('-i', '--interactive', 'Interactively generate a Bunch url') do
     BunchURLGenerator.new.generate
     Process.exit 0
   end
 
-  opts.on('--show-config', 'Display all configuration values') do |opt|
+  opts.on('--show-config', 'Display all configuration values') do
     bunch.show_config
     Process.exit 0
   end
@@ -75,8 +83,10 @@ optparse = OptionParser.new do |opts|
     Process.exit 0
   end
 
-  opts.on('-f', '--force-refresh', 'Force refresh cached preferences') do |opt|
+  opts.on('-f', '--force-refresh', 'Force refresh cached preferences') do
     bunch.update_cache
+    warn 'Cache refreshed'
+    Process.exit 0
   end
 
   opts.on('-h', '--help', 'Display this screen') do |_opt|
@@ -93,14 +103,14 @@ end
 
 optparse.parse!
 
-unless ARGV.length > 0
-  if STDIN.stat.size > 0
+if ARGV.empty?
+  if $stdin.stat.size.positive?
     bunch.url_method = 'raw'
-    bunch.open(CGI.escape(STDIN.read))
+    bunch.open(CGI.escape($stdin.read))
   elsif bunch.url_method == 'setPref'
     bunch.list_preferences
   else
-    puts "CLI for Bunches.app"
+    puts 'CLI for Bunches.app'
     help
   end
 else

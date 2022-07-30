@@ -15,25 +15,31 @@ end
 module Util
   def bundle_id(app)
     shortname = app.sub(/\.app$/, '')
-    apps = `mdfind -onlyin /Applications -onlyin /Applications/Setapp -onlyin /Applications/Utilities -onlyin ~/Applications -onlyin /Developer/Applications -onlyin /System/Applications 'kMDItemKind==Application'`
+    app_dirs = [
+      '/Applications',
+      '/Applications/Setapp',
+      '/Applications/Utilities',
+      '~/Applications',
+      '/Developer/Applications',
+      '/System/Applications'
+    ]
+    only_in = app_dirs.map { |dir| "-onlyin #{dir}" }.join(' ')
+    apps = `mdfind #{only_in} 'kMDItemKind==Application'`
 
-    return false if !apps || apps.strip.length == 0
+    return false if !apps || apps.strip.empty?
 
     foundapps = apps.split(/\n/).select! { |line| line.chomp =~ /#{shortname}\.app$/i }
 
-    if foundapps.length > 0
-      foundapp = foundapps[0]
-    else
-      return false
-    end
+    return false if foundapps.empty?
+
+    foundapp = foundapps[0]
 
     if foundapp
-      bid = `mdls -name kMDItemCFBundleIdentifier -r "#{foundapp}"`.chomp
+      `mdls -name kMDItemCFBundleIdentifier -r "#{foundapp}"`.chomp
     else
       # warn "Could not locate bundle id for #{shortname}, using provided app name"
-      bid = app
+      app
     end
-    bid
   end
 end
 
@@ -80,10 +86,43 @@ module Prompt
     lines.join("\n").chomp
   end
 
+  def yn(question, default_response: false)
+    default = default_response || 'n'
+
+    # if this isn't an interactive shell, answer default
+    return default.downcase == 'y' unless $stdout.isatty
+
+    # clear the buffer
+    if ARGV&.length
+      ARGV.length.times do
+        ARGV.shift
+      end
+    end
+    system 'stty cbreak'
+
+    options = if default
+                default =~ /y/i ? '[Y/n]' : '[y/N]'
+              else
+                '[y/n]'
+              end
+
+    $stdout.syswrite "#{question.sub(/\?$/, '')} #{options}? "
+    res = $stdin.sysread 1
+    puts
+    system 'stty cooked'
+
+    res.chomp!
+    res.downcase!
+
+    res = default.downcase if res == ''
+
+    res =~ /y/i
+  end
+
   def url_encode_text
     text = get_text
     puts
-    CGI.escape(text)
+    CGI.escape(text).gsub(/\+/, '%20')
   end
 end
 
@@ -109,17 +148,17 @@ class Menu
 
   def choose(query = 'Select an item')
     throw 'No items initialized' if @items.nil?
-    STDERR.puts
-    STDERR.puts "┌#{("─" * 74)}┐"
-    intpad = Math::log10(@items.length).to_i + 1
+    $stderr.puts
+    warn "┌#{'─' * 74}┐"
+    intpad = Math.log10(@items.length).to_i + 1
     @items.each_with_index do |item, idx|
-      idxstr = "%#{intpad}d" % (idx + 1)
+      idxstr = format("%#{intpad}d", idx + 1)
       line = "#{idxstr}: #{item.title}"
       pad = 74 - line.length
-      STDERR.puts "│#{line}#{" " * pad}│"
+      warn "│#{line}#{' ' * pad}│"
     end
-    STDERR.puts "└┤ #{query} ├#{"─" * (70 - query.length)}┘"
-    sel = choose_number("> ", @items.length)
+    warn "└┤ #{query} ├#{'─' * (70 - query.length)}┘"
+    sel = choose_number('> ', @items.length)
     sel ? @items[sel.to_i - 1] : nil
   end
 end
@@ -130,13 +169,13 @@ class Snippet
   def initialize(file)
     if File.exist?(File.expand_path(file))
       @contents = IO.read(File.expand_path(file))
-      @fragments = fragments
+      @fragments = find_fragments
     else
-      throw ('Tried to initialize snippet with invalid file')
+      throw 'Tried to initialize snippet with invalid file'
     end
   end
 
-  def fragments
+  def find_fragments
     rx = /(?i-m)(?:[-#]+)\[([\s\S]*?)\][-# ]*\n([\s\S]*?)(?=\n(?:-+\[|#+\[|$))/
     matches = @contents.scan(rx)
     fragments = {}
@@ -167,6 +206,7 @@ class BunchFinder
 
   def initialize
     config_dir = `osascript -e 'tell app "#{TARGET_APP}" to get preference "Folder"'`.strip
+    config_dir.sub!(%r{^file://}, '')
     config_dir = File.expand_path(config_dir)
     if File.directory?(config_dir)
       @config_dir = config_dir
@@ -177,10 +217,8 @@ class BunchFinder
 
   def bunches_to_items
     items = []
-    `osascript -e 'tell app "#{TARGET_APP}" to list bunches'`.strip.split(/,/).each do |b|
-      filename = b.strip
-      items << MenuItem.new(filename, filename, filename)
-    end
+    bunches = `osascript -e 'tell app "#{TARGET_APP}" to list bunches'`.strip.split(/,/).map(&:strip)
+    bunches.sort_by(&:downcase).each { |b| items << MenuItem.new(b, b, b) }
     items
   end
 
@@ -307,8 +345,15 @@ class BunchURLGenerator
       parameters << ['x-delay', delay.to_s] if delay =~ /^\d+$/
     end
 
-    query_string = parameters.map { |param| "#{param[0]}=#{param[1]}" }.join('&')
+    query_string = parameters.map { |param| "#{param[0]}=#{param[1].gsub(/\+/, '%20')}" }.join('&')
+    full_url = "#{url}?#{query_string}".strip
 
-    puts url + '?' + query_string
+    res = yn('Copy URL to clipboard')
+    if res
+      `echo '#{full_url}'|tr -d '\n'|pbcopy`
+      warn 'Copied to clipboard'
+    else
+      puts full_url
+    end
   end
 end

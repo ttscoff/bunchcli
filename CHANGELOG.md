@@ -1,3 +1,8 @@
+### 1.1.13
+
+- Sort Bunches when listing and searching
+- Execute shortest match rather than first match
+
 ### 1.1.11pre
 
 - Fix for Terminal when checking for bundle id
